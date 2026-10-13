@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Tileboard</title>
+<meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Tileboard"><meta name="theme-color" content="#f7f5f0"><meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon-180.png">
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+color-scheme:light;--bg:#f7f5f0;--ink:#1d2230;--mute:#667085;--card:#fffefb;--line:#dcd7cb;--accent:#2457d6}
+*,*:before,*:after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 16px/1.4 "Atkinson Hyperlegible",system-ui,sans-serif}
+header{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;display:flex;gap:8px;align-items:center;padding:10px 14px;background:var(--bg);border-bottom:1px solid var(--line)}
+h1{font-size:20px;margin:0;flex:1}
+button,select,input{font:inherit;color:inherit}
+.btn{border:2px solid var(--line);background:var(--card);border-radius:12px;padding:8px 14px;min-height:44px;cursor:pointer;font-weight:700}
+.btn.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.danger{color:#c0322b}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+#grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(var(--s,130px),1fr));gap:12px;padding:14px}
+.tile .big{font-size:calc(var(--s,130px)*.17)}
+.tile .e{font-size:calc(var(--s,130px)*.38);line-height:1}
+.tile .l{font-weight:700;font-size:clamp(13px,calc(var(--s,130px)*.115),22px);line-height:1.15;word-break:break-word}
+dialog{border:0;border-radius:18px;background:var(--card);color:var(--ink);width:min(420px,92vw);padding:20px}
+dialog::backdrop{background:rgba(0,0,0,.5)}
+label{display:block;font-weight:700;margin:12px 0 4px}
+input[type=text]{width:100%;padding:10px;border:2px solid var(--line);border-radius:10px;background:var(--bg)}
+.sw{display:flex;gap:8px;flex-wrap:wrap}
+.sw button{width:36px;height:36px;border-radius:50%;border:3px solid transparent;background:var(--c);cursor:pointer}
+.sw button[aria-pressed=true]{border-color:var(--ink)}
+.row{display:flex;gap:8px;margin-top:18px;justify-content:flex-end}
+#fn{color:var(--mute);font-size:14px;margin-top:4px}
+.btn.pick{display:inline-block;margin:0;position:relative}
+.vh{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;font-size:0}
+.tile .pic{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+#nav{display:flex;align-items:center;gap:8px;padding:8px 14px 0;font-weight:700}
+#nav[hidden]{display:none}
+.tile.add.af{font-size:15px;font-weight:700}
+.tile{aspect-ratio:1;border:0;border-radius:18px;background:var(--c);color:var(--t,#fff);box-shadow:0 2px 0 rgba(0,0,0,.28),0 5px 12px rgba(0,0,0,.18);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:8px;cursor:pointer;position:relative;text-align:center;overflow:hidden;font:inherit}
+.tile.play{transform:scale(.95);box-shadow:0 0 0 4px var(--ink)}
+.edit .tile:not(.add){outline:3px dashed rgba(0,0,0,.35);outline-offset:-8px}
+.add{background:var(--card);color:var(--mute);font-size:36px;box-shadow:0 0 0 2px var(--line) inset}
+.tile.hasimg{padding:0}
+.tile.hasimg .l{position:absolute;left:0;right:0;bottom:0;background:var(--c);color:var(--t);padding:5px 4px}
+.tile.folder{background:none;box-shadow:none;padding:0;overflow:visible;filter:drop-shadow(0 3px 4px rgba(0,0,0,.28))}
+.tile.folder.play{box-shadow:none}
+.ft{position:absolute;left:0;top:0;width:46%;height:24px;background:var(--c);border-radius:12px 12px 0 0;filter:brightness(.85)}
+.fb{position:absolute;left:0;right:0;top:14px;bottom:0;background:var(--c);color:var(--t);border-radius:0 18px 18px 18px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:8px;overflow:hidden}
+.fb .pic{position:static;width:62%;height:44%;border-radius:10px}
+.fb .e{font-size:calc(var(--s,130px)*.3)}
+.tile.folder .fb .l{position:static;background:none;padding:0;color:inherit}
+.n{font-size:12px;opacity:.85}
+#bar{display:flex;gap:8px;align-items:center;padding:8px 14px;background:var(--card);border-bottom:1px solid var(--line)}
+#bar[hidden],#tools[hidden],#toast[hidden]{display:none}
+#sent{flex:1;min-height:44px;display:flex;align-items:center;font-weight:700;font-size:20px;overflow-x:auto;white-space:nowrap}
+#tools{display:flex;gap:8px;align-items:center;padding:8px 14px 0;flex-wrap:wrap}
+#tools label{margin:0;display:flex;gap:8px;align-items:center}
+#toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom,0px));background:var(--ink);color:#fff;padding:10px 16px;border-radius:12px;z-index:20;max-width:90vw}
+header{flex-wrap:wrap}h1{font-size:18px}
+html,body{overscroll-behavior:none;-webkit-touch-callout:none;touch-action:manipulation}
+.tile,.btn,header,#bar{-webkit-user-select:none;user-select:none}
+.tile .pic.sym{object-fit:contain;background:#fff;padding:6px 6px 30px}
+dialog input[type=checkbox]{width:22px;height:22px}
+#fab{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(10px + env(safe-area-inset-bottom,0px));z-index:10;display:flex;gap:2px;padding:6px;background:var(--card);border-radius:24px;box-shadow:0 4px 18px rgba(0,0,0,.22),0 0 0 1px var(--line);width:min(480px,calc(100% - 20px))}
+#fab .btn{flex:1;padding:8px 2px;font-size:14px;border-width:0;background:transparent;border-radius:18px;min-width:0}
+#fab .btn.on{background:var(--accent);color:#fff}
+#fab .btn:disabled{opacity:.35}
+main{padding-bottom:calc(84px + env(safe-area-inset-bottom,0px))}
+#toast{bottom:calc(88px + env(safe-area-inset-bottom,0px))}
+#bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:5}
+#bnr,#inst{display:flex;gap:8px;align-items:center;padding:8px 14px;font-weight:700}
+#bnr{background:#fff3cd;color:#3d3000}#inst{background:#dbe7ff;color:#12306e}
+#bnr[hidden],#inst[hidden]{display:none}
+#top{padding:10px 14px 0}
+#q{width:100%;padding:11px 14px;border-radius:14px;border:2px solid var(--line);background:var(--card);font-size:16px;-webkit-appearance:none;appearance:none}
+#q:focus{border-color:var(--accent);outline:none}
+.tile{transition:transform .12s ease,box-shadow .12s ease}
+.tile:active{transform:scale(.96)}
+.tile.play{animation:pulse 1s ease-in-out infinite}
+@keyframes pulse{50%{box-shadow:0 0 0 9px rgba(29,34,48,.22)}}
+#fab{background:rgba(255,254,251,.88);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}
+#toast .tbtn{margin-left:14px;background:none;border:0;color:#9db8ff;font:inherit;font-weight:700;cursor:pointer;text-decoration:underline}
+#nav{padding-top:12px}#crumb{background:var(--card);border:1px solid var(--line);border-radius:999px;padding:6px 14px}
+dialog{max-height:88vh;overflow-y:auto}
+#f .row{position:sticky;bottom:-20px;background:var(--card);padding:12px 0 4px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+#favs{display:flex;gap:8px;overflow-x:auto;padding:10px 14px 0;-webkit-overflow-scrolling:touch}
+#favs[hidden]{display:none}
+.fv{flex:0 0 auto;display:flex;align-items:center;gap:6px;border:0;border-radius:14px;padding:8px 12px;min-height:44px;background:var(--c);color:var(--t);font:inherit;font-weight:700;box-shadow:0 2px 0 rgba(0,0,0,.25),0 3px 8px rgba(0,0,0,.12);cursor:pointer}
+.fv img{width:28px;height:28px;border-radius:6px;object-fit:cover;background:#fff}
+.fv.play{outline:3px solid var(--ink)}
+.row{flex-wrap:wrap}
+.tile.folder{filter:drop-shadow(0 4px 5px rgba(0,0,0,.3))}
+.fk{position:absolute;left:0;right:0;top:12px;bottom:0;background:var(--c);filter:brightness(.78);border-radius:8px 18px 18px 18px}
+.ft{width:42%;height:26px;border-radius:10px 14px 0 0;filter:brightness(.78)}
+.fp{position:absolute;left:9%;right:9%;top:24px;height:34%;background:#fff;border-radius:5px;box-shadow:0 1px 2px rgba(0,0,0,.2)}
+.fb{top:34%;bottom:0;border-radius:6px 6px 18px 18px;box-shadow:inset 0 3px 0 rgba(255,255,255,.35);padding:4px 6px;gap:2px}
+.fb .e{font-size:calc(var(--s,130px)*.24)}
+.fb .pic,.fb .pic.sym{width:auto;height:46%;aspect-ratio:1;border-radius:8px;padding:0}
+.tile.folder .fb .l{font-size:clamp(12px,calc(var(--s,130px)*.1),18px)}
+.fv{flex-direction:column;justify-content:center;width:calc(var(--s,130px)*.8);height:calc(var(--s,130px)*.8);padding:6px;text-align:center;gap:2px;border-radius:16px;line-height:1.1;font-size:clamp(12px,calc(var(--s,130px)*.1),17px)}
+.fv .fe{font-size:calc(var(--s,130px)*.3);line-height:1}
+.fv img{width:52%;height:auto;aspect-ratio:1;border-radius:10px}
+:root{--tex:url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20width%3D%27120%27%20height%3D%27120%27%3E%3Cfilter%20id%3D%27n%27%3E%3CfeTurbulence%20type%3D%27fractalNoise%27%20baseFrequency%3D%27.85%27%20numOctaves%3D%272%27%20stitchTiles%3D%27stitch%27/%3E%3CfeColorMatrix%20values%3D%270%200%200%200%20.45%200%200%200%200%20.3%200%200%200%200%20.08%200%200%200%20.6%20-.1%27/%3E%3C/filter%3E%3Crect%20width%3D%27100%25%27%20height%3D%27100%25%27%20filter%3D%27url%28%23n%29%27/%3E%3C/svg%3E")}
+.tile.folder .fk{top:10px;background:#caa040 var(--tex);filter:none;border-radius:8px 18px 18px 18px}
+.tile.folder .ft{height:22px;width:40%;border-radius:10px 14px 0 0;background:#caa040 var(--tex);filter:none}
+.tile.folder .fp{left:12%;right:10%;top:15px;height:48%;transform:rotate(-5deg);transform-origin:left bottom;background:repeating-linear-gradient(#fffefa 0 7px,#dfe6f2 7px 8px);border-radius:3px;box-shadow:0 1px 3px rgba(0,0,0,.25)}
+.tile.folder .fb{top:30%;color:#3a2a0c;background:var(--tex),linear-gradient(#f4d682,#e2b95a);box-shadow:inset 0 2px 0 rgba(255,255,255,.45),0 -1px 2px rgba(0,0,0,.18);border-radius:6px 6px 18px 18px}
+#empty{padding:30px 20px;color:var(--mute);text-align:center}
+</style></head><body>
+<div id="inst" hidden><span style="flex:1">For full screen: tap Share, then Add to Home Screen.</span><button class="btn" id="ix">Close</button></div>
+<div id="bnr" hidden><span id="bt" style="flex:1"></span><button class="btn on" id="bb">Back up</button><button class="btn" id="bl">Later</button></div>
+<div id="bar" hidden><div id="sent" aria-live="polite"></div><button class="btn on" id="say">Speak</button><button class="btn" id="undo">Undo</button><button class="btn" id="clr">Clear</button></div>
+<nav id="fab"><button class="btn" id="back" disabled>Back</button><button class="btn" id="home" disabled>Home</button><button class="btn" id="sentBtn" aria-pressed="false">Sentence</button><button class="btn" id="stop">Stop</button><button class="btn" id="editBtn" aria-pressed="false">Edit</button></nav>
+<div id="toast" role="status" hidden></div>
+<main><div id="top"><input id="q" type="search" placeholder="Search tiles" aria-label="Search tiles" autocomplete="off"></div><div id="favs" hidden></div><div id="tools" hidden><span style="flex-basis:100%;font-weight:700">Editing: tap a tile to change it</span><label>Size <input id="size" type="range" min="90" max="220" value="130"></label><button class="btn" id="exp">Export backup</button><button class="btn" id="imp">Import backup</button><button class="btn" id="setBtn">Settings</button></div><div id="nav" hidden><span id="crumb"></span></div><div id="grid"></div><div id="empty" hidden>No tiles yet. Tap Edit, then + to add your first sound.</div></main>
+
+<dialog id="dlg"><form method="dialog" id="f" onsubmit="return false">
+<label for="lab">Label</label><input id="lab" type="text" maxlength="30">
+<div id="colsec"><label>Color</label><div class="sw" id="sw"></div><input id="cc" type="color" aria-label="Custom color" style="width:100%;height:44px;border:2px solid var(--line);border-radius:10px;margin-top:8px;padding:2px;background:var(--bg)"></div>
+<label for="emo">Emoji (optional)</label><input id="emo" type="text" maxlength="8">
+<div id="snd"><label style="display:flex;gap:10px;align-items:center"><input type="checkbox" id="fav"> Pin to favorites row</label>
+<label for="sayas">Say this instead (optional)</label><input id="sayas" type="text" maxlength="80" placeholder="e.g. I need the toilet"><label>Sound</label><button class="btn" id="audBtn" type="button">Choose audio file</button><div id="fn"></div></div>
+<label>Picture</label><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" id="imgBtn" type="button">Choose image</button><button class="btn" id="symBtn" type="button">Find symbol</button><button class="btn" id="noimg" type="button">Remove image</button></div><div id="in"></div>
+<div id="sym" hidden><div style="display:flex;gap:8px;margin-top:8px"><input id="symq" type="text" placeholder="Search symbols"><button class="btn" id="symgo" type="button">Search</button></div><div id="symres" style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:8px"></div><div style="font-size:12px;color:var(--mute);margin-top:6px">Symbols: ARASAAC (Gobierno de Aragon), CC BY-NC-SA, non-commercial use. Needs internet.</div></div>
+<label for="par">Location</label><select id="par" class="btn" style="width:100%"></select>
+<div id="ord" style="display:flex;gap:8px;margin-top:10px"><button class="btn" id="earlier" type="button">Move earlier</button><button class="btn" id="later" type="button">Move later</button></div>
+<div class="row"><button class="btn" id="dup" type="button">Duplicate</button><button class="btn danger" id="del" type="button">Delete</button><button class="btn" id="cancel" type="button">Cancel</button><button class="btn on" id="save" type="button">Save</button></div>
+</form></dialog>
+<dialog id="sd"><label for="voice">Voice</label><select id="voice" class="btn" style="width:100%"></select>
+<label for="rate">Speed</label><input id="rate" type="range" min="0.5" max="1.5" step="0.05" style="width:100%">
+<div id="vcount" style="color:var(--mute);font-size:13px;margin-top:4px"></div>
+<div style="color:var(--mute);font-size:13px;margin-top:4px">More voices: on iPhone go to Settings > Accessibility > Spoken Content > Voices and download Enhanced ones. On Android: Settings > Text-to-speech.</div>
+<label for="pitch">Pitch</label><input id="pitch" type="range" min="0.5" max="1.5" step="0.05" style="width:100%">
+<div style="margin-top:8px"><button class="btn" id="vtest" type="button">Test voice</button></div>
+<label for="pin">Edit lock PIN (empty = no lock)</label><input id="pin" type="text" inputmode="numeric" maxlength="6" placeholder="4-6 digits">
+<label style="display:flex;gap:10px;align-items:center"><input type="checkbox" id="auto"> Return to top after tapping a tile</label>
+<label style="display:flex;gap:10px;align-items:center"><input type="checkbox" id="clrafter"> Clear sentence after speaking</label>
+<label style="display:flex;gap:10px;align-items:center"><input type="checkbox" id="wake"> Keep screen on</label>
+<label style="display:flex;gap:10px;align-items:center"><input type="checkbox" id="vib"> Vibrate on tap (Android)</label>
+<label>App icon</label><div style="display:flex;gap:12px;align-items:center"><img id="ipv" alt="" style="width:64px;height:64px;border-radius:14px;display:none"><div style="color:var(--mute);font-size:13px">After changing it, remove the Home Screen shortcut and add it again to use the new icon.</div></div>
+<div id="isw" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px"></div><div id="igl" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px"></div>
+<div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap"><button class="btn" id="iimg" type="button">Use my image</button><button class="btn" id="ires" type="button">Reset icon</button></div>
+<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px"><button class="btn" id="rst" type="button">Restore starter tiles</button><button class="btn danger" id="era" type="button">Erase all tiles</button></div>
+<div id="stg" style="color:var(--mute);margin-top:12px;font-size:14px"></div>
+<div class="row"><button class="btn on" id="sclose" type="button">Done</button></div></dialog>
+<dialog id="pd"><label for="pi">Enter PIN</label><input id="pi" type="password" inputmode="numeric" maxlength="6" style="width:100%;padding:10px;border:2px solid var(--line);border-radius:10px;background:var(--bg)"><div id="pe" style="color:#c0322b;min-height:22px;margin-top:6px"></div><div class="row"><button class="btn" id="pc" type="button">Cancel</button><button class="btn on" id="pk" type="button">OK</button></div></dialog>
+
+<script>
+try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}catch(e){}
+const COLORS=["#2457d6","#1f9d6b","#e0902b","#d9453d","#8a4fd0","#d6469a","#0f9fb5","#6b7488"];
+let qs="",symUrl=null,symPick=false,sent=false,words=[],path=[],kind="tile",imgFile=null,clearImg=false,urls={},tiles=[],editing=false,cur=null,color=COLORS[0],file=null,db=null,audio=null,playingId=null;
+const $=id=>document.getElementById(id);
+const mem={};
+function open(){return new Promise(r=>{try{const q=indexedDB.open("tileboard",1);q.onupgradeneeded=()=>q.result.createObjectStore("t",{keyPath:"id"});q.onsuccess=()=>r(q.result);q.onerror=()=>r(null)}catch(e){r(null)}})}
+function tx(m,fn){return new Promise(r=>{if(!db){r(fn(null,mem));return}try{const t=db.transaction("t",m),s=t.objectStore("t"),q=fn(s);if(q&&q.onsuccess!==undefined){q.onsuccess=()=>r(q.result);q.onerror=()=>r()}else t.oncomplete=()=>r()}catch(e){r()}})}
+const all=()=>tx("readonly",(s,m)=>m?Object.values(m):s.getAll());
+const put=t=>tx("readwrite",(s,m)=>{if(m)m[t.id]=t;else return s.put(t)});
+const rm=id=>tx("readwrite",(s,m)=>{if(m)delete m[id];else return s.delete(id)});
+function render(){const g=$("grid");g.innerHTML="";g.className=editing?"edit":"";
+ const fv=tiles.filter(t=>t.fav&&t.kind!=="folder").sort((a,b)=>a.order-b.order),F=$("favs");F.innerHTML="";F.hidden=!fv.length||!!qs;
+ fv.forEach(t=>{const b=document.createElement("button");b.className="fv"+(playingId===t.id?" play":"");b.style.setProperty("--c",t.color);b.style.setProperty("--t",lum(t.color)>.65?"#1d2230":"#fff");
+  const src=t.img?(urls[t.id+t.img.size]=urls[t.id+t.img.size]||URL.createObjectURL(t.img)):t.imgUrl;
+  if(src){const i=document.createElement("img");i.alt="";i.src=src;b.append(i)}else if(t.emoji){const e=document.createElement("span");e.className="fe";e.textContent=t.emoji;b.append(e)}
+  const l=document.createElement("span");l.textContent=t.label;b.append(l);b.onclick=()=>editing?openDlg(t):tap(t);F.append(b)});
+ const here=path[path.length-1]||null;
+ $("nav").hidden=!path.length||!!qs;$("back").disabled=$("home").disabled=!path.length;$("crumb").textContent=path.map(id=>(tiles.find(x=>x.id===id)||{}).label).join(" / ");
+ tiles.filter(t=>qs?(t.label+" "+(t.say||"")).toLowerCase().includes(qs):(t.parent||null)===here).sort((a,b)=>(b.kind==="folder")-(a.kind==="folder")||a.order-b.order).forEach(t=>{
+  const b=document.createElement("button"),f=t.kind==="folder";
+  b.className="tile"+(f?" folder":"")+((t.img||t.imgUrl)?" hasimg":"")+(playingId===t.id?" play":"");
+  b.style.setProperty("--c",t.color);b.style.setProperty("--t",lum(t.color)>.65?"#1d2230":"#fff");
+  let pic="";if(t.img){const k=t.id+t.img.size;urls[k]=urls[k]||URL.createObjectURL(t.img);pic=`<img class="pic${t.sym?" sym":""}" alt="" src="${urls[k]}">`}else if(t.imgUrl){pic=`<img class="pic sym" alt="" src="${t.imgUrl}">`}else if(t.emoji)pic=`<span class="e"></span>`;
+  const n=f?tiles.filter(x=>x.parent===t.id).length:0,inner=`${pic}<span class="l${pic?"":" big"}"></span>${f?'<span class="n"></span>':""}`;
+  b.innerHTML=f?`<span class="ft"></span><span class="fk"></span><span class="fp"></span><span class="fb">${inner}</span>`:inner;
+  b.querySelector(".l").textContent=t.label;const e=b.querySelector(".e");if(e)e.textContent=t.emoji;
+  if(f)b.querySelector(".n").textContent=n+(n===1?" item":" items");else if(qs&&t.parent&&!t.img&&!t.imgUrl){const c=document.createElement("span");c.className="n";c.textContent=fpath(t.parent);b.append(c)}
+  b.onclick=()=>editing?openDlg(t):f?(stop(),path=chain(t.id),$("q").value="",qs="",render()):tap(t);g.append(b)});
+ if(editing&&!qs){const a=document.createElement("button");a.className="tile add";a.textContent="+";a.setAttribute("aria-label","Add tile");a.onclick=()=>openDlg(null,"tile");g.append(a);const f=document.createElement("button");f.className="tile add af";f.textContent="+ Folder";f.onclick=()=>openDlg(null,"folder");g.append(f)}
+ $("empty").textContent=qs?"No tiles match your search.":"No tiles yet. Tap Edit, then + to add your first sound.";$("empty").hidden=g.children.length>0||(editing&&!qs);
+ if(qs&&!g.children.length&&(!cfg.pin||editing)){const b=document.createElement("button");b.className="btn on";b.style.marginTop="12px";b.textContent='Add "'+qs+'" as a new tile';b.onclick=()=>{const q=$("q").value.trim();openDlg(null,"tile");$("lab").value=q};$("empty").append(document.createElement("br"),b)}}
+async function seedTiles(){let o=100;const add=async t=>{t.order=o++;t.kind=t.kind||"tile";tiles.push(t);await put(t)};
+ for(const[fn,fe,fc,items]of [["","",0,[["Hello","👋",0],["Yes","👍",1],["No","👎",3],["Please","🙏",6],["Thank you","😊",0],["Help","🆘",3],["More","➕",2],["Stop","✋",3],["All done","✅",7],["Sorry","😔",4],["I want","👉",5],["I like","❤️",5],["I don't like","👎",7],["Wait","⏳",2],["Again","🔁",6],["Where","❓",4],["Bye","👋",7]]],
+["Introduction","👋",0,[["My name is","🪪",0,"My name is"],["I use this app","🗣️",3,"I communicate using this app"],["Nice to meet you","🤝",1],["How are you?","💬",6],["I'm fine","😊",1,"I'm fine, thank you"],["Please wait","⏳",2,"Please wait, I need a moment to answer"],["Speak slowly","🐢",4,"Please speak slowly"],["I understand","👍",1],["I don't understand","🤷",3],["Please repeat","🔁",6,"Could you please repeat that"],["Thank you for listening","🙏",0],["Goodbye","👋",7,"Goodbye, see you later"]]],
+["Needs","🙋",1,[["Toilet","🚽",0],["Hungry","🍽️",2],["Thirsty","🥤",6],["Pain","🤕",3],["Tired","😴",4],["Hot","🥵",3],["Cold","🥶",0],["Sleep","🛏️",4],["Medicine","💊",3],["Wash hands","🧼",6],["Bath","🛁",0],["Hug","🤗",5]]],
+["Feelings","😀",2,[["Happy","😀",2],["Sad","😢",0],["Angry","😠",3],["Scared","😨",4],["Excited","🤩",5],["Bored","😐",7],["Sick","🤒",1],["Love","❤️",5],["Worried","😟",4]]],
+["Food & drink","🍎",3,[["Water","💧",6],["Juice","🧃",2],["Milk","🥛",0],["Apple","🍎",3],["Banana","🍌",2],["Bread","🍞",7],["Snack","🍪",2],["Breakfast","🥞",2],["Lunch","🥪",1],["Dinner","🍝",3],["Fruit","🍇",4]]],
+["People","👪",0,[["Mom","👩",5],["Dad","👨",0],["Friend","🧑‍🤝‍🧑",1],["Teacher","🧑‍🏫",2],["Doctor","🧑‍⚕️",3],["Me","🙋",6],["You","👈",4]]],
+["Activities","🎮",4,[["Play","🎮",1],["TV","📺",0],["Music","🎵",5],["Outside","🌳",1],["Book","📖",2],["Draw","🎨",4],["Walk","🚶",6],["Swim","🏊",0],["Phone","📱",7]]],
+["Questions","❓",6,[["What?","❓",6,"What is that?"],["Who?","🧑",4,"Who is that?"],["Where?","📍",1,"Where is it?"],["When?","🗓️",2,"When will it happen?"],["Why?","🤔",5,"Why?"],["How?","🛠️",0,"How do I do this?"],["Can I have...","🙋",1,"Can I please have that?"],["Can you help?","🆘",3,"Can you help me, please?"],["What time is it?","⏰",2],["How much?","💲",7,"How much is it?"]]],
+["Health","🩺",3,[["Headache","🤕",3,"I have a headache"],["Stomach ache","🤢",2,"My stomach hurts"],["Dizzy","😵",4,"I feel dizzy"],["Cough","😷",7,"I have a cough"],["Fever","🌡️",3,"I think I have a fever"],["Allergic","⚠️",2,"I am allergic"],["My medicine","💊",0,"I need my medicine"],["See a doctor","🧑‍⚕️",1,"I need to see a doctor"],["Hard to breathe","😮‍💨",3,"I am having trouble breathing"],["It hurts here","👆",4,"It hurts here"],["Feel better","🙂",1,"I feel better"],["Feel worse","🙁",3,"I feel worse"]]],
+["Emergency","🚨",3,[["Emergency","🆘",3,"Help me please, this is an emergency"],["Call emergency","📞",3,"Please call emergency services"],["Call my family","👪",0,"Please call my family"],["I'm hurt","🩹",3,"I am hurt"],["I'm lost","🧭",2,"I am lost, please help me"],["Not safe","🚨",3,"I do not feel safe"],["Can't speak","🤐",7,"I can't speak, please be patient with me"]]],
+["Places","📍",1,[["Home","🏠",1],["School","🏫",2],["Work","🏢",0],["Hospital","🏥",3],["Store","🛒",5],["Park","🏞️",1],["Bathroom","🚻",6],["Car","🚗",0],["Bus","🚌",2],["Restaurant","🍴",4],["Library","📚",7]]],
+["Time","🕒",7,[["Now","⏰",3],["Later","🕒",2],["Today","📅",0],["Tomorrow","🌅",5],["Yesterday","⏪",7],["Morning","🌄",2],["Afternoon","☀️",1],["Evening","🌇",4],["Night","🌙",0],["Weekend","📆",6]]]]){let par=null;if(fn){let f=tiles.find(t=>t.kind==="folder"&&t.label===fn&&!t.parent);if(!f){f={id:"seed-f-"+fn,label:fn,emoji:fe,color:COLORS[fc],kind:"folder",parent:null};await add(f)}else if(!f.emoji&&!f.img){f.emoji=fe;await put(f)}par=f.id}
+  for(const[l,e,c,z]of items){const x=tiles.find(t=>(t.parent||null)===par&&t.label===l);if(!x)await add({id:"seed-"+par+"-"+l,label:l,emoji:e,color:COLORS[c],say:z||"",parent:par});else if(!x.emoji&&!x.img){x.emoji=e;await put(x)}}}
+ try{localStorage.setItem("tb-seed4","1")}catch(_){}}
+async function cloneTree(t,parent,order,top){const c={...t,id:"c"+Date.now().toString(36)+Math.random().toString(36).slice(2,6),parent,order};if(top)c.label=t.label+" (copy)";tiles.push(c);await put(c);for(const k of tiles.filter(x=>x.parent===t.id))await cloneTree(k,c.id,k.order);return c}
+$("dup").onclick=async()=>{if(!cur)return;await cloneTree(cur,cur.parent||null,cur.order+.5,true);bump();$("dlg").close();render();say("Duplicated")};
+$("clrafter").onchange=e=>{cfg.clrafter=e.target.checked;saveCfg()};
+$("rst").onclick=async()=>{await seedTiles();render();$("sd").close();say("Starter tiles restored")};
+let eArm=false;$("era").onclick=async()=>{if(!eArm){eArm=true;$("era").textContent="Tap again to erase everything";setTimeout(()=>{eArm=false;$("era").textContent="Erase all tiles"},4000);return}eArm=false;$("era").textContent="Erase all tiles";const old=[...tiles];for(const t of old)await rm(t.id);tiles=[];path=[];bump();$("sd").close();render();say("All tiles erased",async()=>{for(const t of old){await put(t);tiles.push(t)}render()})};
+let iBg=COLORS[0],iGl="grid";
+function drawIcon(n){const c=document.createElement("canvas");c.width=c.height=n;const x=c.getContext("2d");x.fillStyle=iBg;x.fillRect(0,0,n,n);
+ if(iGl==="grid"){x.fillStyle="#fff";[[.16,.16],[.55,.16],[.16,.55],[.55,.55]].forEach(p=>{x.beginPath();x.roundRect(p[0]*n,p[1]*n,.29*n,.29*n,.06*n);x.fill()})}
+ else{x.font=Math.round(n*.58)+"px sans-serif";x.textAlign="center";x.textBaseline="middle";x.fillText(iGl,n/2,n*.54)}return c}
+function setIcon(d){cfg.iconData=d;saveCfg();applyIcon()}
+function applyIcon(){const d=cfg.iconData;if(!d)return;let l=document.querySelector('link[rel="apple-touch-icon"]');if(!l){l=document.createElement("link");l.rel="apple-touch-icon";document.head.append(l)}l.href=d;
+ try{const k=document.querySelector('link[rel="manifest"]');if(k){const m={name:"Tileboard",short_name:"Tileboard",start_url:location.origin+location.pathname,scope:location.origin+location.pathname.replace(/[^/]*$/,""),display:"standalone",background_color:"#f7f5f0",theme_color:"#f7f5f0",icons:[{src:d,sizes:"192x192",type:"image/png"},{src:d,sizes:"512x512",type:"image/png"}]};k.href=URL.createObjectURL(new Blob([JSON.stringify(m)],{type:"application/manifest+json"}))}}catch(_){}}
+function iconUI(){const a=$("isw");a.innerHTML="";COLORS.forEach(c=>{const b=document.createElement("button");b.type="button";b.setAttribute("aria-label","Icon color "+c);b.style.cssText="width:32px;height:32px;border-radius:50%;cursor:pointer;background:"+c+";border:3px solid "+(c===iBg?"var(--ink)":"transparent");b.onclick=()=>{iBg=c;setIcon(drawIcon(512).toDataURL("image/png"));iconUI()};a.append(b)});
+ const g=$("igl");g.innerHTML="";["grid","💬","🔊","🗣️","⭐","❤️","👋"].forEach(v=>{const b=document.createElement("button");b.type="button";b.className="btn"+(v===iGl?" on":"");b.style.minWidth="44px";b.textContent=v==="grid"?"▦":v;b.onclick=()=>{iGl=v;setIcon(drawIcon(512).toDataURL("image/png"));iconUI()};g.append(b)});
+ $("ipv").src=cfg.iconData||"";$("ipv").style.display=cfg.iconData?"":"none"}
+$("iimg").onclick=async()=>{const f=await pick("image/*");if(!f)return;const i=new Image(),u=URL.createObjectURL(f);i.onload=()=>{const c=document.createElement("canvas");c.width=c.height=512;const m=Math.min(i.width,i.height);c.getContext("2d").drawImage(i,(i.width-m)/2,(i.height-m)/2,m,m,0,0,512,512);URL.revokeObjectURL(u);setIcon(c.toDataURL("image/png"));iconUI()};i.onerror=()=>say("Couldn't read that image");i.src=u};
+$("ires").onclick=()=>{cfg.iconData="";saveCfg();iconUI();say("Icon reset. It returns to the default after you reload.")};
+function chain(id){const a=[];while(id){a.unshift(id);id=(tiles.find(x=>x.id===id)||{}).parent}return a}
+$("q").oninput=e=>{qs=e.target.value.trim().toLowerCase();render()};
+function lum(h){const n=parseInt(h.slice(1),16);return((n>>16)*.299+(n>>8&255)*.587+(n&255)*.114)/255}
+let tt;function say(m,act){const e=$("toast");e.textContent=m;if(act){const b=document.createElement("button");b.className="tbtn";b.textContent="Undo";b.onclick=()=>{e.hidden=true;act()};e.append(b)}e.hidden=false;clearTimeout(tt);tt=setTimeout(()=>e.hidden=true,act?7000:3500)}
+function speak(text,done){const ss=window.speechSynthesis;if(!ss||!window.SpeechSynthesisUtterance){say("Speech isn't supported in this browser");return false}
+ const go=()=>{const u=new SpeechSynthesisUtterance(text);u.lang=navigator.language||"en-US";u.rate=cfg.rate;u.pitch=cfg.pitch||1;try{const v=ss.getVoices().find(x=>x.voiceURI===cfg.voice);if(v){u.voice=v;u.lang=v.lang}}catch(_){}u.onend=()=>done&&done();u.onerror=e=>{if(e.error&&!/cancel|interrupt/.test(e.error))say("Speech error: "+e.error);done&&done()};try{ss.resume()}catch(_){}ss.speak(u)};
+ if(ss.speaking||ss.pending){ss.cancel();setTimeout(go,80)}else go();return true}
+function stopAudio(){if(audio){audio.pause();URL.revokeObjectURL(audio.src);audio=null}}
+function stop(){try{speechSynthesis.cancel()}catch(_){}stopAudio();playingId=null}
+function play(t){const same=playingId===t.id;if(same){stop();render();return}stopAudio();playingId=t.id;
+ if(!t.blob){const end=()=>{if(playingId===t.id){playingId=null;render()}};if(!speak(t.say||t.label,end))end();render();return}
+ try{speechSynthesis.cancel()}catch(_){}
+ audio=new Audio(URL.createObjectURL(t.blob));audio.onended=()=>{stop();render()};audio.play().catch(()=>{stop();render();say("Couldn't play this file")});render()}
+function tap(t){if(cfg.vib&&navigator.vibrate)navigator.vibrate(15);if(sent){words.push(t.say||t.label);drawBar()}if(cfg.auto&&path.length)path=[];play(t)}
+function drawBar(){$("sent").textContent=words.join(" ")||"Tap tiles to build a sentence"}
+$("sentBtn").onclick=e=>{sent=!sent;words=[];e.target.classList.toggle("on",sent);e.target.setAttribute("aria-pressed",sent);$("bar").hidden=!sent;drawBar()};
+$("say").onclick=()=>{if(words.length){stopAudio();playingId=null;speak(words.join(" "));if(cfg.clrafter){words=[];drawBar()}render()}};
+$("undo").onclick=()=>{words.pop();drawBar()};$("clr").onclick=()=>{words=[];drawBar()};
+var armed=false;
+function fpath(id){const a=[];while(id){const f=tiles.find(x=>x.id===id);if(!f)break;a.unshift(f.label);id=f.parent}return a.join(" / ")}
+function fillPar(t){const bad=t?[t.id,...kids(t.id)]:[],s=$("par");s.innerHTML="";const o=(v,l)=>{const e=document.createElement("option");e.value=v;e.textContent=l;s.append(e)};o("","Top level");tiles.filter(x=>x.kind==="folder"&&!bad.includes(x.id)).forEach(x=>o(x.id,fpath(x.id)));s.value=t?(t.parent||""):(path[path.length-1]||"")}
+async function nudge(d){if(!cur)return;const sib=tiles.filter(x=>(x.parent||null)===(cur.parent||null)&&(x.kind==="folder")===(cur.kind==="folder")).sort((a,b)=>a.order-b.order),i=sib.indexOf(cur),j=i+d;if(j<0||j>=sib.length)return;const o=cur.order;cur.order=sib[j].order;sib[j].order=o;await put(cur);await put(sib[j]);render()}
+function openDlg(t,k){fillPar(t);$("emo").value=t?(t.emoji||""):"";$("sayas").value=t?(t.say||""):"";$("fav").checked=!!(t&&t.fav);$("dup").style.display=t?"":"none";symUrl=null;symPick=false;$("sym").hidden=true;$("ord").style.display=t?"flex":"none";armed=false;$("del").textContent="Delete";cur=t;kind=t?(t.kind||"tile"):k;$("snd").style.display=kind==="folder"?"none":"";$("colsec").style.display=kind==="folder"?"none":"";file=null;imgFile=null;clearImg=false;$("in").textContent=t&&t.img?"Current picture kept unless you change it":"";color=t?t.color:COLORS[0];
+ $("lab").value=t?t.label:"";$("del").style.display=t?"":"none";
+ $("fn").textContent=t&&t.blob?"Current: "+(t.fname||"saved sound"):"No file: the label is spoken aloud";drawSw();$("cc").value=color;$("dlg").showModal();$("lab").focus()}
+function drawSw(){const s=$("sw");s.innerHTML="";COLORS.forEach(c=>{const b=document.createElement("button");b.type="button";b.style.setProperty("--c",c);b.setAttribute("aria-label","Color "+c);b.setAttribute("aria-pressed",c===color);b.onclick=()=>{color=c;$("cc").value=c;drawSw()};s.append(b)})}
+function pick(acc){return new Promise(res=>{const i=document.createElement("input");i.type="file";i.accept=acc;i.style.cssText="position:fixed;left:-9999px";i.onchange=()=>{res(i.files[0]||null);i.remove()};document.body.append(i);try{i.click()}catch(e){i.remove();res(null);$("fn").textContent="This browser blocked the file picker. Open the page in your phone browser."}})}
+$("audBtn").onclick=async()=>{const f=await pick("audio/*,.mp3,.m4a,.wav,.ogg,.aac,.flac");if(f){file=f;$("fn").textContent="Selected: "+f.name+" ("+mb(f.size)+")";if(f.size>15728640)say("Large file ("+mb(f.size)+"). Short clips work best.");clipLen(f).then(d=>{if(d)$("fn").textContent+=", "+Math.round(d)+" s"+(d>60?" - long clip":"")})}};
+$("imgBtn").onclick=async()=>{const f=await pick("image/*");if(f){imgFile=f;symPick=false;symUrl=null;clearImg=false;$("in").textContent="Selected: "+f.name}};
+$("noimg").onclick=()=>{imgFile=null;clearImg=true;$("in").textContent="Image will be removed"};
+(e=>{if(0){clearImg=false;}})();
+function shrink(f){return new Promise(r=>{const i=new Image(),u=URL.createObjectURL(f);i.onload=()=>{const k=Math.min(1,400/Math.max(i.width,i.height)),c=document.createElement("canvas");c.width=Math.round(i.width*k);c.height=Math.round(i.height*k);(x=>{x.fillStyle="#fff";x.fillRect(0,0,c.width,c.height);return x})(c.getContext("2d")).drawImage(i,0,0,c.width,c.height);c.toBlob(b=>{URL.revokeObjectURL(u);r(b||f)},"image/jpeg",.85)};i.onerror=()=>r(f);i.src=u})}
+$("cc").oninput=e=>{color=e.target.value;drawSw()};
+const b64=b=>new Promise(r=>{const f=new FileReader();f.onload=()=>r(f.result);f.readAsDataURL(b)});
+const d2b=u=>{const[h,d]=u.split(","),m=h.match(/:(.*?);/)[1],bin=atob(d),a=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)a[i]=bin.charCodeAt(i);return new Blob([a],{type:m})};
+async function doExport(){const out=[];for(const t of tiles){const o={...t};if(t.blob)o.blob=await b64(t.blob);if(t.img)o.img=await b64(t.img);out.push(o)}
+ const file=new File([JSON.stringify(out)],"tileboard-backup-"+new Date().toISOString().slice(0,10)+".json",{type:"application/json"});let ok=false;
+ if(navigator.canShare&&navigator.canShare({files:[file]})){try{await navigator.share({files:[file]});ok=true}catch(e){if(e.name==="AbortError")return}}
+ if(!ok){const a=document.createElement("a");a.href=URL.createObjectURL(file);a.download=file.name;document.body.append(a);a.click();a.remove()}
+ cfg.changes=0;cfg.lastBackup=Date.now();saveCfg();$("bnr").hidden=true;say("Backup saved")}
+$("exp").onclick=doExport;$("bb").onclick=doExport;$("bl").onclick=()=>$("bnr").hidden=true;
+$("imp").onclick=async()=>{const f=await pick("application/json,.json");if(!f)return;try{const arr=JSON.parse(await f.text());for(const o of arr){if(o.blob)o.blob=d2b(o.blob);if(o.img)o.img=d2b(o.img);await put(o)}tiles=(await all())||[];render();say("Imported "+arr.length+" tiles")}catch(e){say("That file isn't a valid backup")}};
+let cfg={voice:"",rate:.95,pitch:1,clrafter:false,iconData:"",wake:false,pin:"",auto:false,vib:true,changes:0,lastBackup:0};
+function bump(){cfg.changes=(cfg.changes||0)+1;saveCfg()}
+const mb=n=>n<1048576?Math.round(n/1024)+" KB":(n/1048576).toFixed(1)+" MB";
+const clipLen=f=>new Promise(r=>{const a=new Audio(),u=URL.createObjectURL(f);a.preload="metadata";a.onloadedmetadata=()=>{r(a.duration);URL.revokeObjectURL(u)};a.onerror=()=>{r(0);URL.revokeObjectURL(u)};a.src=u});
+async function stgInfo(){let t="Last backup: "+(cfg.lastBackup?new Date(cfg.lastBackup).toLocaleDateString():"never")+". Changes since: "+(cfg.changes||0)+".";try{const e=await navigator.storage.estimate();t="Storage used: "+mb(e.usage)+" of about "+mb(e.quota)+". "+t}catch(_){}$("stg").textContent=t}
+try{const sa=navigator.standalone||matchMedia("(display-mode: standalone)").matches;if(/iPhone|iPad|iPod/.test(navigator.userAgent)&&!sa&&window.self===window.top&&!localStorage.getItem("tb-inst"))$("inst").hidden=false}catch(_){}
+$("ix").onclick=()=>{$("inst").hidden=true;try{localStorage.setItem("tb-inst","1")}catch(_){}};
+try{Object.assign(cfg,JSON.parse(localStorage.getItem("tb-cfg")||"{}"))}catch(_){}
+const saveCfg=()=>{try{localStorage.setItem("tb-cfg",JSON.stringify(cfg))}catch(_){}};
+function fillVoices(){try{const v=speechSynthesis.getVoices(),s=$("voice"),L=(navigator.language||"en").slice(0,2).toLowerCase();s.innerHTML="";
+ const add=(g,l)=>{if(!l.length)return;const og=document.createElement("optgroup");og.label=g;l.forEach(x=>{const e=document.createElement("option");e.value=x.voiceURI;e.textContent=x.name+(/enhanced|premium|neural|siri/i.test(x.name+x.voiceURI)?" *":"")+" ("+x.lang+")";og.append(e)});s.append(og)};
+ const d=document.createElement("option");d.value="";d.textContent="Device default";s.append(d);
+ const m=v.filter(x=>x.lang.toLowerCase().startsWith(L)).sort((a,b)=>a.name.localeCompare(b.name)),o=v.filter(x=>!m.includes(x)).sort((a,b)=>a.lang.localeCompare(b.lang)||a.name.localeCompare(b.name));
+ add("Your language",m);add("Other languages",o);s.value=cfg.voice;$("vcount").textContent=v.length+" voices on this device. * = higher quality"}catch(_){}}
+try{speechSynthesis.onvoiceschanged=fillVoices}catch(_){}
+$("setBtn").onclick=()=>{iconUI();stgInfo();fillVoices();$("rate").value=cfg.rate;$("clrafter").checked=cfg.clrafter;$("pitch").value=cfg.pitch||1;$("wake").checked=cfg.wake;$("pin").value=cfg.pin;$("auto").checked=cfg.auto;$("vib").checked=cfg.vib;$("sd").showModal()};
+$("voice").onchange=e=>{cfg.voice=e.target.value;saveCfg();speak("Hello, this is how I sound")};$("rate").oninput=e=>{cfg.rate=+e.target.value;saveCfg()};
+$("pin").oninput=e=>{e.target.value=e.target.value.replace(/\D/g,"");cfg.pin=e.target.value;saveCfg()};
+$("auto").onchange=e=>{cfg.auto=e.target.checked;saveCfg()};$("vib").onchange=e=>{cfg.vib=e.target.checked;saveCfg()};
+$("pitch").oninput=e=>{cfg.pitch=+e.target.value;saveCfg()};
+let wlk=null;async function wl(){try{if(wlk){await wlk.release();wlk=null}if(cfg.wake&&navigator.wakeLock)wlk=await navigator.wakeLock.request("screen")}catch(_){}}
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&cfg.wake)wl()});
+$("wake").onchange=e=>{cfg.wake=e.target.checked;saveCfg();wl()};wl();
+$("sent").onclick=()=>$("say").onclick();applyIcon();
+$("vtest").onclick=()=>speak("Hello, this is how I sound");$("sclose").onclick=()=>$("sd").close();
+$("symBtn").onclick=()=>{$("sym").hidden=!$("sym").hidden;if(!$("sym").hidden){$("symq").value=$("lab").value;symSearch()}};
+$("symgo").onclick=symSearch;
+async function symSearch(){const q=$("symq").value.trim(),L=$("symres");if(!q)return;L.textContent="Searching...";
+ try{const r=await fetch("https://api.arasaac.org/v1/pictograms/"+(navigator.language||"en").slice(0,2)+"/search/"+encodeURIComponent(q));const a=(await r.json()).slice(0,12);L.innerHTML="";if(!a.length)L.textContent="No symbols found";
+  a.forEach(p=>{const u="https://static.arasaac.org/pictograms/"+p._id+"/"+p._id+"_300.png",b=document.createElement("button"),i=document.createElement("img");b.type="button";b.style.cssText="border:2px solid var(--line);border-radius:10px;background:#fff;padding:2px;cursor:pointer";i.src=u;i.alt=q;i.style.width="100%";b.append(i);b.onclick=()=>useSym(u);L.append(b)})}
+ catch(e){L.textContent="Symbols need internet and the hosted app. They are blocked inside the Claude preview."}}
+async function useSym(u){symPick=true;try{imgFile=await (await fetch(u)).blob();symUrl=null}catch(e){imgFile=null;symUrl=u}clearImg=false;$("in").textContent="Symbol selected";$("sym").hidden=true}
+$("cancel").onclick=()=>$("dlg").close();
+$("save").onclick=async()=>{const label=$("lab").value.trim();if(!label&&!file){$("lab").focus();return}
+ const t=cur||{id:Date.now()+"",order:Date.now(),kind,parent:path[path.length-1]||null};
+ Object.assign(t,{label:label||(file?file.name.replace(/\.[^.]+$/,""):""),color,emoji:$("emo").value.trim(),say:$("sayas").value.trim(),fav:$("fav").checked&&kind!=="folder"});
+ const np=$("par").value||null;if(cur&&(cur.parent||null)!==np)t.order=Date.now();t.parent=np;
+ if(file&&kind!=="folder"){t.blob=file;t.fname=file.name}
+ if(imgFile){t.img=await shrink(imgFile);t.sym=symPick;delete t.imgUrl}else if(symUrl){t.imgUrl=symUrl;delete t.img}else if(clearImg){delete t.img;delete t.imgUrl}
+ await put(t);bump();if(!cur)tiles.push(t);$("dlg").close();render()};
+const kids=id=>tiles.filter(x=>x.parent===id).flatMap(x=>[x.id,...kids(x.id)]);
+$("earlier").onclick=()=>nudge(-1);$("later").onclick=()=>nudge(1);
+$("back").onclick=()=>{stop();path.pop();render()};
+$("del").onclick=async()=>{if(!cur)return;const ids=[cur.id,...kids(cur.id)];if(ids.length>1&&!armed){armed=true;$("del").textContent="Tap again: delete folder + "+(ids.length-1)+" inside";return}const gone=tiles.filter(x=>ids.includes(x.id)),nm=cur.label;for(const id of ids)await rm(id);bump();setTimeout(()=>say("Deleted "+nm,async()=>{for(const t of gone){await put(t);tiles.push(t)}render()}),300);tiles=tiles.filter(x=>!ids.includes(x.id));if(ids.includes(playingId))stop();if(path.includes(cur.id))path=path.slice(0,path.indexOf(cur.id));$("dlg").close();render()};
+function toggleEdit(b){editing=!editing;b.classList.toggle("on",editing);b.setAttribute("aria-pressed",editing);b.textContent=editing?"Done":"Edit";$("tools").hidden=!editing;render();if(!editing&&cfg.changes>0){$("bt").textContent=cfg.changes+" change"+(cfg.changes>1?"s":"")+" not backed up";$("bnr").hidden=false}}
+$("editBtn").onclick=e=>{const b=e.currentTarget;if(!editing&&cfg.pin)askPin(()=>toggleEdit(b));else toggleEdit(b)};
+function askPin(ok){$("pi").value="";$("pe").textContent="";$("pd").showModal();$("pi").focus();$("pk").onclick=()=>{if($("pi").value===cfg.pin){$("pd").close();ok()}else{$("pe").textContent="Wrong PIN";$("pi").value=""}}}
+$("pc").onclick=()=>$("pd").close();
+$("home").onclick=()=>{stop();path=[];render()};
+$("stop").onclick=()=>{stop();render()};
+$("size").oninput=e=>{document.documentElement.style.setProperty("--s",e.target.value+"px");try{localStorage.setItem("tb-size",e.target.value)}catch(_){}};
+(async()=>{try{const v=localStorage.getItem("tb-size");if(v){$("size").value=v;$("size").oninput({target:$("size")})}}catch(_){}
+ db=await open();tiles=(await all())||[];
+ if(!(()=>{try{return localStorage.getItem("tb-seed4")}catch(_){return 0}})())await seedTiles();
+ render()})();
+if("serviceWorker"in navigator)addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
+</script></body></html>
